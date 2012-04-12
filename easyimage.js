@@ -7,7 +7,7 @@ var error_messages = {
 	'path': 'Missing image paths.\nMake sure both source and destination files are specified.',	
 	'dim': 'Missing dimensions.\nSpecify the width atleast.',
 	'restricted': 'The command you are trying to execute is prohibited.',
-	'unsupported': 'It seems like this file is not supported.',
+	'unsupported': 'It seems that this file is not supported.',
 };
 
 // function to throw errors at unsuspecting and potentially innocent developers
@@ -155,6 +155,125 @@ exports.thumbnail = function(options, callback) {
 
 	});
 };
+
+/**
+ * Rescale an image so that the smallest side of the image will be at the given size.
+ * If the smallest side of the original image is smaller than the given size no scaling will happen 
+ * to avoid loss of quality.
+ * 
+ * example call:
+ * easyimg.rescaleToMin(
+ *	{
+ *		src:'src.jpg', dst:'destination.jpg',
+ *		width:100
+ *	},
+ *	function(err, stdout, stderr) {
+ *		if (err) throw err;
+ *		console.log('New image created');
+ *	}
+ *);
+ * 
+ */
+exports.rescaleToMin = function(options, callback) {
+
+	if (options.src === undefined || options.dst === undefined) throw_err('path');
+	if (options.width === undefined) throw_err('dim');
+	options.src = quoted_name(options.src);
+	options.dst = quoted_name(options.dst);
+
+	info(options.src, function(err, original, stderr) {
+		if (err) throw err;
+
+		// calculate new dimensions:
+		if (original.height < options.width && original.width < options.width) {
+			// image to small
+			resizewidth  = original.width;
+			resizeheight = original.height;
+		} else if (original.height < original.width) {
+			resizewidth  = original.width * options.width / original.height;
+			resizeheight = options.width;
+		} else if (original.height > original.width) {
+			resizeheight = original.height * options.width / original.width;
+			resizewidth  = options.width;
+		} else {
+			// width and heigth of image is the same:
+			resizewidth  = original.width;
+			resizeheight = original.width;
+		}
+
+		// resize and crop
+		if (options.quality === undefined) imcmd = 'convert ' + options.src + ' -resize ' + resizewidth + 'x' + resizeheight + ' ' + options.dst;
+		else imcmd = 'convert ' + options.src + ' -resize '+ resizewidth + 'x' + resizeheight + ' -quality ' + options.quality + ' ' + options.dst;
+		
+		child = exec(imcmd, function(err, stdout, stderr) {
+			if (err) throw err;
+				callback(err, stdout, stderr);
+		});
+
+	});
+
+};
+
+
+/**
+ * Rescale an image so that the longest side of the image will be at the given size.
+ * If the longest side of the original image is smaller than the given size no scaling will happen
+ * to avoid loss of quality.
+ * 
+ * example call:
+ * easyimg.rescaleToMax(
+ *	{
+ *		src:'src.jpg', dst:'destination.jpg',
+ *		width:100
+ *	},
+ *	function(err, stdout, stderr) {
+ *		if (err) throw err;
+ *		console.log('New image created');
+ *	}
+ *);
+ * 
+ */
+exports.rescaleToMax = function(options, callback) {
+
+	if (options.src === undefined || options.dst === undefined) throw_err('path');
+	if (options.width === undefined) throw_err('dim');
+	options.src = quoted_name(options.src);
+	options.dst = quoted_name(options.dst);
+
+	info(options.src, function(err, original, stderr) {
+		if (err) throw err;
+
+		// calculate new dimensions:
+		if (original.height < options.width && original.width < options.width) {
+			// image to small
+			resizewidth  = original.width;
+			resizeheight = original.height;
+		} else if (original.height > original.width) {
+			resizewidth  = original.width * options.width / original.height;
+			resizeheight = options.width;
+		} else if (original.height < original.width) {
+			resizeheight = original.height * options.width / original.width;
+			resizewidth  = options.width;
+		} else {
+			// width and heigth of image is the same:
+			resizewidth  = original.width;
+			resizeheight = original.width;
+		}
+
+		// resize and crop
+		if (options.quality === undefined) imcmd = 'convert ' + options.src + ' -resize ' + resizewidth + 'x' + resizeheight + ' ' + options.dst;
+		else imcmd = 'convert ' + options.src + ' -resize '+ resizewidth + 'x' + resizeheight + ' -quality ' + options.quality + ' ' + options.dst;
+		
+		child = exec(imcmd, function(err, stdout, stderr) {
+			if (err) throw err;
+				callback(err, stdout, stderr);
+		});
+
+	});
+
+};
+
+
 
 // for the hardcore types - issue your own ImageMagick command
 exports.exec = function(command, callback) {
