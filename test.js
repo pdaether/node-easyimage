@@ -1,4 +1,4 @@
-var easyimg = require('easyimage');
+var easyimg = require('./easyimage.js');
 
 var srcimg = 'sample-images/thed.jpg';
 
